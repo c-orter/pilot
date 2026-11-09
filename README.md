@@ -4,79 +4,89 @@
 
 # Pilot
 
-Two jobs for the Home button on an Android TV or Google TV device:
+I use Nuvio almost exclusively on my onn 4K Pro. The Home button kept taking me to the Google TV home screen, which I never wanted, so I wrote this to change what it does. A short press opens Nuvio. Holding it opens an overlay with the rest of my apps on top of whatever is playing.
 
-- **Press** it and you land in one app, Nuvio by default.
-- **Hold** it and an apps overlay opens on top of whatever is playing.
-
-If you spend your day in a single app, the stock launcher is one more screen between you and it. This replaces that screen with a button press and keeps the app list a hold away.
+Nuvio is only the default. The home app can be any app you pick in settings.
 
 ## How it works
 
-Pilot is an accessibility service. It asks Android to show it key events before the system acts on them, takes the Home key, and times the press itself. The system's own Home and long-press (Dashboard) actions never run.
+Pilot is an accessibility service. Android shows those services key events before it acts on them, so Pilot takes the Home key and times the press itself. The system's own Home and long-press actions never run.
 
-It is not a launcher app and doesn't register as one, so the Google TV home screen stays installed and is always reachable from the overlay.
+It isn't a launcher, so the Google TV home screen is still there. The overlay has an icon that opens it.
 
 ## Using it
 
-| Action | Result |
-| --- | --- |
-| Press Home | Opens the home app. If that app is Nuvio and already on its home screen, nothing happens. |
-| Hold Home (half a second) | Opens the apps overlay. |
-| Enter on an app | Opens it. |
-| Hold Enter on an app | Menu: Open, Move, Force close, App settings, Uninstall. |
-| Move, then arrows | Reorders the app. Enter drops it, Back cancels. The order is saved. |
-| Back | Closes the menu, then the overlay. |
+Press Home to open your home app. If you're already in it, nothing happens. Pilot knows which app is in front but not which screen inside it, so it can't take you back to that app's own home screen.
 
-Two small icons sit at the top right of the overlay: the system home screen, and this app's settings. The home app and Pilot itself are left out of the grid.
+Hold Home for half a second to open the overlay.
 
-### Settings
+The overlay shows your apps as banner tiles, five to a row. Apps that don't ship a banner get a tile with their icon and name. Your home app and Pilot itself are left out. Two icons at the top right open the stock Google TV home screen and Pilot's settings.
 
-Open them from the overlay's gear icon, or from the apps row of the stock TV launcher.
+Press OK on a tile to open that app. Hold OK for a menu: Open, Move, Force close, App settings, Uninstall. Move lets you rearrange with the arrow keys. OK drops the app and Back cancels, and the order is saved. Back closes the menu, then the overlay. The overlay also closes by itself when the screen turns off, when another app comes to the front, or after a minute with no key presses.
 
-- **Home app**: the app a short press opens. Defaults to Nuvio.
-- **Restart the home app on every Home press**: on by default. Nuvio ignores a launch while it is open, so restarting is what gets you back to its home screen. Turn it off to return to the app as you left it.
-- **Service status**: shows whether the accessibility service is running, with a shortcut to the accessibility settings.
+Settings are behind the gear icon in the overlay, and in the apps row of the stock launcher. You can pick the home app and decide whether it restarts when you press Home from another app. With restart on, which is the default, the app starts fresh and lands on its home screen. Turn it off to return to the app where you left it. The screen also says whether the service is running.
 
 ## Install
 
-Download `pilot-<version>.apk` from the [latest release](https://github.com/c-orter/pilot/releases/latest) and install it with adb. Wireless debugging works on most TV boxes.
+Download `pilot-<version>.apk` from the [latest release](https://github.com/c-orter/pilot/releases/latest) and install it with adb. I use wireless debugging.
 
 ```sh
-adb install pilot-0.1.0.apk
+adb install pilot-0.2.0.apk
 ```
 
-Then turn the service on. Android 13 and later can block accessibility toggles for sideloaded apps in the settings UI, so use adb:
+Then turn the service on. Android 13 and later can grey out the accessibility toggle for sideloaded apps, so do it with adb. First check what is already enabled:
+
+```sh
+adb shell settings get secure enabled_accessibility_services
+```
+
+If that prints `null`, run these two:
 
 ```sh
 adb shell settings put secure enabled_accessibility_services app.overlaylauncher/app.overlaylauncher.HomeKeyService
 adb shell settings put secure accessibility_enabled 1
 ```
 
-That command replaces the list of enabled services. If you already use another accessibility service, join the two names with a colon.
+If it lists other services, the first command would replace them, so add Pilot after a colon instead:
 
-If Home ever misbehaves, turn the service off and the stock behavior returns at once:
+```sh
+adb shell settings put secure enabled_accessibility_services "<what it printed>:app.overlaylauncher/app.overlaylauncher.HomeKeyService"
+```
+
+When the service is off, Pilot's settings screen shows these commands with your TV's IP address.
+
+To update, install over the old one. The service stays enabled.
+
+```sh
+adb install -r pilot-<version>.apk
+```
+
+Google TV caches app tiles, so an old icon or banner can linger after an update. Restarting the box should clear it.
+
+If Home misbehaves, turn the service off and you get the stock behavior back:
 
 ```sh
 adb shell settings delete secure enabled_accessibility_services
 ```
 
+That clears the whole list. If you use other accessibility services, put them back or edit the list instead.
+
 ## Limits
 
-- **Device support.** Built for the onn 4K Pro (Android 14, Google TV) and developed against the Google TV emulator. Whether a remote's Home button reaches an accessibility service depends on the device firmware, so other boxes may differ.
-- **Force close.** Android doesn't let a normal app force-stop another one. The menu entry kills background processes only, so it won't close the app currently in front. Use *App settings*, then *Force stop*, for that.
-- **Already-home detection** reads Nuvio's sidebar, so it only applies when Nuvio is the home app. Any other home app is simply launched on every press.
+I've only run this on my onn 4K Pro (Android 14, Google TV) and in the Google TV emulator. Whether a remote's Home button reaches an accessibility service depends on the device's firmware, so it may not work on other boxes.
+
+Force close only kills background processes, because Android doesn't let a normal app force-stop another one. It won't close the app that's in front. For that, use App settings and then Force stop.
 
 ## Build
 
-Needs JDK 17 and the Android SDK (platform 35, build-tools 36).
+You need JDK 17 and the Android SDK (platform 35, build-tools 36).
 
 ```sh
 ./gradlew assembleDebug      # app/build/outputs/apk/debug/
 ./gradlew assembleRelease    # signed if keystore.properties exists
 ```
 
-For a signed release, create `keystore.properties` in the project root. It is gitignored.
+For a signed release, put a `keystore.properties` in the project root. It's gitignored.
 
 ```properties
 storeFile=/path/to/release.jks
@@ -85,14 +95,4 @@ keyAlias=...
 keyPassword=...
 ```
 
-## Layout
-
-| File | Role |
-| --- | --- |
-| `HomeKeyService.kt` | Accessibility service: Home key handling, launching, app actions |
-| `AppsOverlay.kt` | The overlay: grid, long-press menu, move mode, entrance animation |
-| `MainActivity.kt` | Settings screen and home-app picker |
-| `Prefs.kt` | Home app, restart toggle, app order |
-| `Apps.kt` | Lists launchable apps |
-
-The app has no dependencies beyond the Android framework.
+The code is a handful of Kotlin files in `app/src/main/java/app/overlaylauncher`. `HomeKeyService.kt` handles the key and launching, `AppsOverlay.kt` is the overlay, and `MainActivity.kt` is the settings screen. `Prefs.kt` and `Apps.kt` hold the saved settings and the app list. There are no dependencies beyond the Android framework.

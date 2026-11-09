@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Color
-import android.os.Bundle
+import android.graphics.Typeface
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.Gravity
@@ -17,6 +17,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
+import java.net.Inet4Address
+import java.net.NetworkInterface
 
 /** Settings: pick the "home" app, and check that the key service is enabled. */
 class MainActivity : Activity() {
@@ -60,11 +62,12 @@ class MainActivity : Activity() {
         val serviceOn = isServiceEnabled()
         column.addView(
             text(
-                if (serviceOn) "Service is running" else "Service is off. Turn on \"Pilot\" in Accessibility.",
+                if (serviceOn) "Service is running" else "Service is off.",
                 18f,
                 if (serviceOn) 0xFF7BD88F.toInt() else 0xFFFFB454.toInt(),
             ),
         )
+        if (!serviceOn) column.addView(adbHelp())
         val accessibilityButton = button("Open accessibility settings") {
             try {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -157,11 +160,31 @@ class MainActivity : Activity() {
         }
     }
 
+    /** Android 13+ often greys out the accessibility toggle for sideloaded apps, so spell out the adb route. */
+    private fun adbHelp() = text(
+        "Turn it on from a computer with adb. Android 13 and later often blocks the usual toggle for sideloaded apps.\n\n" +
+            "adb connect ${localIp() ?: "<tv ip>"}:<port from Wireless debugging>\n" +
+            "adb shell settings put secure enabled_accessibility_services $service\n" +
+            "adb shell settings put secure accessibility_enabled 1\n\n" +
+            "If you already use another accessibility service, add this one after a colon.",
+        15f,
+        0xFFB0B6C3.toInt(),
+    ).apply { typeface = Typeface.MONOSPACE }
+
+    private fun localIp(): String? = try {
+        NetworkInterface.getNetworkInterfaces().toList()
+            .flatMap { it.inetAddresses.toList() }
+            .firstOrNull { it is Inet4Address && !it.isLoopbackAddress }?.hostAddress
+    } catch (_: Exception) {
+        null
+    }
+
+    private val service get() = ComponentName(this, HomeKeyService::class.java).flattenToString()
+
     private fun isServiceEnabled(): Boolean {
         val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
             ?: return false
-        val me = ComponentName(this, HomeKeyService::class.java).flattenToString()
-        return enabled.split(':').any { it == me }
+        return enabled.split(':').any { it == service }
     }
 
     private fun labelFor(packageName: String): String = try {

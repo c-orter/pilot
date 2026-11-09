@@ -2,7 +2,10 @@ package app.overlaylauncher
 
 import android.accessibilityservice.AccessibilityService
 import android.app.ActivityManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -11,7 +14,6 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 
 /**
@@ -22,6 +24,7 @@ class HomeKeyService : AccessibilityService() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var longPressFired = false
+    private var foregroundPackage: String? = null
 
     private val overlay by lazy {
         AppsOverlay(
@@ -34,9 +37,21 @@ class HomeKeyService : AccessibilityService() {
         )
     }
 
+    private val screenOff = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) = overlay.dismiss()
+    }
+
     private val showOverlay = Runnable {
         longPressFired = true
-        overlay.show()
+        try {
+            overlay.show()
+        } catch (e: Exception) {
+            Log.w(TAG, "overlay failed to open", e)
+        }
+    }
+
+    override fun onServiceConnected() {
+        registerReceiver(screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF))
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
@@ -48,36 +63,29 @@ class HomeKeyService : AccessibilityService() {
             }
         } else {
             handler.removeCallbacks(showOverlay)
-            if (!longPressFired) onHomePressed()
+            if (!longPressFired) {
+                // Whatever goes wrong, Home is already consumed, so never let it throw out of here.
+                runCatching { onHomePressed() }.onFailure { Log.w(TAG, "home press failed", it) }
+            }
         }
         return true
     }
 
     private fun onHomePressed() {
-        if (overlay.isShowing) {
-            // Close the overlay first, then give the app below a moment to become the active window again.
+        overlay.dismiss()
+        val homePackage = Prefs.homePackage(this)
+        if (foregroundPackage != homePackage) launch(homePackage)
+    }
+
+    /** Tracks which app is in front, and closes the overlay when a different one takes over. */
+    override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        val pkg = event.packageName?.toString() ?: return
+        if (pkg == packageName || pkg == "android" || pkg.startsWith("com.android.systemui")) return
+        if (pkg != foregroundPackage) {
+            foregroundPackage = pkg
             overlay.dismiss()
-            handler.postDelayed(::goHome, OVERLAY_SETTLE_MS)
-        } else {
-            goHome()
         }
-    }
-
-    /** Opens the home app, unless it is already sitting on its home screen. */
-    private fun goHome() {
-        if (!isOnHomeScreen()) launch(Prefs.homePackage(this))
-    }
-
-    /** Nuvio marks the sidebar's "Home" item as selected while its home screen is showing. */
-    private fun isOnHomeScreen(): Boolean {
-        if (Prefs.homePackage(this) != NUVIO_PACKAGE) return false
-        val root = rootInActiveWindow ?: return false
-        return root.packageName == NUVIO_PACKAGE && hasSelectedHome(root)
-    }
-
-    private fun hasSelectedHome(node: AccessibilityNodeInfo): Boolean {
-        if (node.isSelected && node.contentDescription?.toString() == "Home") return true
-        return (0 until node.childCount).any { i -> node.getChild(i)?.let(::hasSelectedHome) == true }
     }
 
     private fun launch(packageName: String) {
@@ -98,13 +106,20 @@ class HomeKeyService : AccessibilityService() {
         start(intent)
     }
 
-    private fun start(intent: Intent) {
+    /** Starts [intent]; if the system refuses, falls back to the stock home screen so Home is never dead. */
+    private fun start(intent: Intent, fallbackToHome: Boolean = true) {
         overlay.dismiss()
-        startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        try {
+            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: Exception) {
+            Log.w(TAG, "could not start $intent", e)
+            if (fallbackToHome) openSystemHome() else Toast.makeText(this, "Could not open that", Toast.LENGTH_SHORT).show()
+        }
     }
 
     /** The escape hatch: the system's own home screen (we never register as a HOME app). */
-    private fun openSystemHome() = start(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+    private fun openSystemHome() =
+        start(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), fallbackToHome = false)
 
     private fun openSettings() = start(Intent(this, MainActivity::class.java))
 
@@ -114,27 +129,24 @@ class HomeKeyService : AccessibilityService() {
             // Android doesn't let normal apps force-stop others; this kills background processes only.
             AppAction.FORCE_CLOSE -> {
                 (getSystemService(ACTIVITY_SERVICE) as ActivityManager).killBackgroundProcesses(app.packageName)
-                Toast.makeText(this, "Asked Android to close ${app.label}", Toast.LENGTH_SHORT).show()
+                overlay.flash("Asked Android to close ${app.label}")
             }
             AppAction.APP_SETTINGS -> start(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri))
             AppAction.UNINSTALL -> start(Intent(Intent.ACTION_DELETE, uri))
         }
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent) = Unit
-
     override fun onInterrupt() = Unit
 
     override fun onUnbind(intent: Intent?): Boolean {
-        handler.removeCallbacks(showOverlay)
+        handler.removeCallbacksAndMessages(null)
         overlay.dismiss()
+        runCatching { unregisterReceiver(screenOff) }
         return super.onUnbind(intent)
     }
 
     private companion object {
         const val TAG = "OverlayLauncher"
-        const val NUVIO_PACKAGE = "com.nuvio.tv"
         const val LONG_PRESS_MS = 500L
-        const val OVERLAY_SETTLE_MS = 150L
     }
 }

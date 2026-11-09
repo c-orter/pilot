@@ -4,7 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 
-class AppEntry(val label: String, val packageName: String, val icon: Drawable)
+/** [banner] is the TV launcher banner (320x180dp), which many apps don't ship. */
+class AppEntry(val label: String, val packageName: String, val icon: Drawable, val banner: Drawable?)
 
 /** Apps that show up in a TV or phone launcher, sorted by name. */
 fun loadLaunchableApps(context: Context, excludeSelf: Boolean): List<AppEntry> {
@@ -19,6 +20,7 @@ fun loadLaunchableApps(context: Context, excludeSelf: Boolean): List<AppEntry> {
                 label = it.loadLabel(pm).toString(),
                 packageName = it.activityInfo.packageName,
                 icon = it.loadIcon(pm),
+                banner = it.activityInfo.loadBanner(pm),
             )
         }
         .sortedBy { it.label.lowercase() }

@@ -18,8 +18,10 @@ android {
         applicationId = "app.overlaylauncher"
         minSdk = 30
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        // versionCode follows versionName, so every release bump is also a new versionCode.
+        val version = "0.2.0"
+        versionName = version
+        versionCode = version.split('.').let { (major, minor, patch) -> major.toInt() * 10000 + minor.toInt() * 100 + patch.toInt() }
     }
 
     signingConfigs {
