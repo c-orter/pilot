@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="app/src/main/res/drawable-xhdpi/banner.png" alt="Overlay Launcher" width="360">
+  <img src="app/src/main/res/drawable-xhdpi/banner.png" alt="Pilot" width="360">
 </p>
 
-# Overlay Launcher
+# Pilot
 
 Two jobs for the Home button on an Android TV or Google TV device:
 
@@ -13,7 +13,7 @@ If you spend your day in a single app, the stock launcher is one more screen bet
 
 ## How it works
 
-Overlay Launcher is an accessibility service. It asks Android to show it key events before the system acts on them, takes the Home key, and times the press itself. The system's own Home and long-press (Dashboard) actions never run.
+Pilot is an accessibility service. It asks Android to show it key events before the system acts on them, takes the Home key, and times the press itself. The system's own Home and long-press (Dashboard) actions never run.
 
 It is not a launcher app and doesn't register as one, so the Google TV home screen stays installed and is always reachable from the overlay.
 
@@ -28,7 +28,7 @@ It is not a launcher app and doesn't register as one, so the Google TV home scre
 | Move, then arrows | Reorders the app. Enter drops it, Back cancels. The order is saved. |
 | Back | Closes the menu, then the overlay. |
 
-Two small icons sit at the top right of the overlay: the system home screen, and this app's settings. The home app and Overlay Launcher itself are left out of the grid.
+Two small icons sit at the top right of the overlay: the system home screen, and this app's settings. The home app and Pilot itself are left out of the grid.
 
 ### Settings
 
@@ -40,10 +40,10 @@ Open them from the overlay's gear icon, or from the apps row of the stock TV lau
 
 ## Install
 
-Download `overlay-launcher-<version>.apk` from the [latest release](https://github.com/c-orter/overlay-launcher/releases/latest) and install it with adb. Wireless debugging works on most TV boxes.
+Download `pilot-<version>.apk` from the [latest release](https://github.com/c-orter/pilot/releases/latest) and install it with adb. Wireless debugging works on most TV boxes.
 
 ```sh
-adb install overlay-launcher-0.1.0.apk
+adb install pilot-0.1.0.apk
 ```
 
 Then turn the service on. Android 13 and later can block accessibility toggles for sideloaded apps in the settings UI, so use adb:

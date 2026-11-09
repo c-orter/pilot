@@ -47,7 +47,7 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(96), dp(48), dp(96), dp(48))
         }
-        column.addView(text("Overlay Launcher", 32f, Color.WHITE))
+        column.addView(text("Pilot", 32f, Color.WHITE))
         column.addView(
             text(
                 "Short press Home: open $homeLabel.   Hold Home: apps list.",
@@ -60,7 +60,7 @@ class MainActivity : Activity() {
         val serviceOn = isServiceEnabled()
         column.addView(
             text(
-                if (serviceOn) "Service is running" else "Service is off. Turn on \"Overlay Launcher\" in Accessibility.",
+                if (serviceOn) "Service is running" else "Service is off. Turn on \"Pilot\" in Accessibility.",
                 18f,
                 if (serviceOn) 0xFF7BD88F.toInt() else 0xFFFFB454.toInt(),
             ),

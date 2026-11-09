@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <rect width="640" height="360" fill="#161B24"/>
+  <rect x="70" y="110" width="160" height="94" rx="16" fill="#232A37" stroke="#E6E9F0" stroke-width="16"/>
+  <circle cx="150" cy="250" r="20" fill="#FFB020"/>
+  <text x="290" y="226" font-family="Noto Sans" font-weight="700" font-size="104" fill="#FFFFFF">Pilot</text>
+</svg>

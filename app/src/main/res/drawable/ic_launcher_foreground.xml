@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A house (Home button) whose door is a grid of apps. Kept inside the 66dp adaptive-icon safe zone. -->
+<!-- A TV screen with its standby light on. Kept inside the 66dp adaptive-icon safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,22 L88,50 L80,50 L80,84 L28,84 L28,50 L20,50 Z" />
+        android:fillColor="#232A37"
+        android:strokeColor="#E6E9F0"
+        android:strokeWidth="5"
+        android:pathData="M35,37 H73 A5,5 0 0 1 78,42 V60 A5,5 0 0 1 73,65 H35 A5,5 0 0 1 30,60 V42 A5,5 0 0 1 35,37 Z" />
     <path
-        android:fillColor="#5B8CFF"
-        android:pathData="M43,58 h9 v9 h-9 Z M56,58 h9 v9 h-9 Z M43,71 h9 v9 h-9 Z M56,71 h9 v9 h-9 Z" />
+        android:fillColor="#FFB020"
+        android:pathData="M48,76 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 Z" />
 </vector>
