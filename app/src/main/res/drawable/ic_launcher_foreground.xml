@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A house (Home button) whose door is a grid of apps. Kept inside the 66dp adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,22 L88,50 L80,50 L80,84 L28,84 L28,50 L20,50 Z" />
+    <path
+        android:fillColor="#5B8CFF"
+        android:pathData="M43,58 h9 v9 h-9 Z M56,58 h9 v9 h-9 Z M43,71 h9 v9 h-9 Z M56,71 h9 v9 h-9 Z" />
+</vector>

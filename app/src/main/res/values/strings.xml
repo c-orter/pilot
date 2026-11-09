@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Overlay Launcher</string>
+    <string name="service_label">Overlay Launcher</string>
+    <string name="service_description">Short press of Home opens your home app. Long press opens an apps list.</string>
+</resources>
