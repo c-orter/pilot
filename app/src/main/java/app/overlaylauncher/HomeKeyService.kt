@@ -32,7 +32,6 @@ class HomeKeyService : AccessibilityService() {
             windowManager = getSystemService(WINDOW_SERVICE) as WindowManager,
             onLaunch = ::launch,
             onAppAction = ::runAppAction,
-            onTvHome = ::openSystemHome,
             onSettings = ::openSettings,
         )
     }
@@ -89,9 +88,7 @@ class HomeKeyService : AccessibilityService() {
     }
 
     private fun launch(packageName: String) {
-        // TV-only apps have no phone LAUNCHER entry, only a LEANBACK one.
-        val intent = packageManager.getLeanbackLaunchIntentForPackage(packageName)
-            ?: packageManager.getLaunchIntentForPackage(packageName)
+        val intent = launchIntentFor(this, packageName)
         if (intent == null) {
             // Never leave Home dead: if the chosen app is gone, fall back to the system home screen.
             Log.w(TAG, "no launch intent for $packageName")
@@ -117,9 +114,12 @@ class HomeKeyService : AccessibilityService() {
         }
     }
 
-    /** The escape hatch: the system's own home screen (we never register as a HOME app). */
-    private fun openSystemHome() =
-        start(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), fallbackToHome = false)
+    /** The escape hatch: the stock home screen, addressed explicitly so it works even if we're the default home app. */
+    private fun openSystemHome() {
+        val intent = stockHomeIntent(this)
+        if (intent != null) start(intent, fallbackToHome = false)
+        else Toast.makeText(this, "No system home screen found", Toast.LENGTH_SHORT).show()
+    }
 
     private fun openSettings() = start(Intent(this, MainActivity::class.java))
 

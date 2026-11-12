@@ -40,7 +40,6 @@ class AppsOverlay(
     private val windowManager: WindowManager,
     private val onLaunch: (String) -> Unit,
     private val onAppAction: (AppAction, AppEntry) -> Unit,
-    private val onTvHome: () -> Unit,
     private val onSettings: () -> Unit,
 ) {
     private val handler = Handler(Looper.getMainLooper())
@@ -372,7 +371,6 @@ class AppsOverlay(
                     },
                     LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
                 )
-                addView(iconButton(R.drawable.ic_tv_home, "TV Home", onTvHome))
                 addView(iconButton(R.drawable.ic_settings, "Settings", onSettings))
             },
         )
